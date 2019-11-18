@@ -26,3 +26,8 @@
   //暴露接口
   w.BigNew = BigNew;
 })(window);
+
+/* 
+1.  $.ajaxSetup() : 为所有的AJAX请求设置默认值
+2.  beforeSend(xhr):	发送请求前运行的函数。(这个方法可以根据后台需求设置一些固定请求头)
+*/
