@@ -14,6 +14,7 @@
     <script src="./libs/bootstrap/js/bootstrap.min.js"></script>
     <!-- 引入模板引擎js文件 -->
     <script src="./libs/template-web.js"></script>
+    <script src="./js/apilink.js"></script>
 </head>
 
 <body>
@@ -31,25 +32,135 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>奇趣事</td>
-                        <td>funny</td>
-                        <td class="text-center">
-                            <a href="javascript:void(0)" data-toggle="modal" class=" btn btn-info btn-xs">编辑</a>
-                            <a href="javascript:void(0)" class="btn btn-danger btn-xs">删除</a>
-                        </td>
-                    </tr>
+
                 </tbody>
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-center">
-                            <a href="javascript:void(0)" class="btn btn-success" id="xinzengfenlei" data-toggle="modal"
-                                data-target="#myModal">新增分类</a>
+                            <a href="javascript:void(0)" class="btn btn-success myModal" id="xinzengfenlei"
+                                data-toggle="modal" data-target="#exampleModal" data-target="#myModal">新增分类</a>
                         </td>
                     </tr>
                 </tfoot>
             </table>
         </div>
     </div>
+    <!-- bootstrap模态框 -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="exampleModalLabel">New message</h4>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                            <label for="recipient-name" class="control-label">名称:</label>
+                            <input type="text" class="form-control" id="recipient-name">
+                        </div>
+                        <div class="form-group">
+                            <label for="message-text" class="control-label">Slug:</label>
+                            <textarea class="form-control" id="message-text"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="addArticle">Send message</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- bootstrap模态框 -->
+    <!-- 小模态框 -->
+    <div class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+        <div class="modal-dialog modal-sm" role="document">
+            <div class="modal-content">
+                已经有这个名字了哦
+            </div>
+        </div>
+    </div>
+    <script type="text/html" id="list">
+    {{each data}}
+    <tr>
+            <td>{{$value.name}}</td>
+            <td>{{$value.slug}}</td>
+            <td class="text-center">
+                <a href="javascript:void(0)" data-id={{$value.id}} data-target="#exampleModal" data-toggle="modal" class=" btn btn-info btn-xs myModal" id="btnEdit">编辑</a>
+                <a href="javascript:void(0)" data-id={{$value.id}} data-target="#exampleModal" class="btn btn-danger btn-xs">删除</a>
+            </td>
+        </tr>
+    {{/each}}
+    </script>
+    <script>
+        $(function () {
+            function getList() {
+                $.get({
+                    url: BigNew.category_list,
+                    success: function (res) {
+                        let htmlStr = template('list', res);
+                        $('tbody').html(htmlStr);
+                    }
+                })
+            }
+            getList();
+$('tbody').on('click','#btnEdit',function(){
+    console.log(11);
+    
+})
+            $('#exampleModal').on('show.bs.modal', function (e) {
+                var button = $(e.relatedTarget);
+                if (button.hasClass('btn-success')) {
+                    $('#addArticle').text('Add');
+                    $('#addArticle').on('click', function () {
+                        $.post({
+                            url: BigNew.category_add,
+                            data: {
+                                name: $('#recipient-name').val(),
+                                slug: $('#message-text').val()
+                            },
+
+                            success: function (res) {
+                                if (res.code == 201) {
+                                    // console.log(res);
+                                    $('#recipient-name').val("");
+                                    $('#message-text').val("");
+                                    $('#exampleModal').modal('hide');
+                                }
+                            }
+                        })
+                        getList();
+
+                    })
+                } else {
+                    $('#addArticle').text('Save');
+                    $('#addArticle').on('click', function () {
+                        $.post({
+                            url: BigNew.category_edit,
+                            data: {
+                                name: $('#recipient-name').val(),
+                                slug: $('#message-text').val()
+                            },
+
+                            success: function (res) {
+                                if (res.code == 201) {
+                                    // console.log(res);
+                                    $('#recipient-name').val();
+                                    $('#message-text').val();
+                                    $('#exampleModal').modal('hide');
+                                }
+                            }
+                        })
+                        getList();
+
+                    })
+                }
+            })
+
+        })
+    </script>
+</body>
 
 </html>

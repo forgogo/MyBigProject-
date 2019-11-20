@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="css/iconfont.css">
     <link rel="stylesheet" href="css/main.css">
     <script src="./libs/jquery-1.12.4.min.js"></script>
+    <script src="./js/apilink.js"></script>
 
 </head>
 
@@ -68,6 +69,64 @@
             </form>
         </div>
     </div>
+    <script>
+        $(function () {
+            $.get({
+                url: BigNew.user_detail,
+                success: function (res) {
+                    // console.log(res);
+                    // $('input.nickname').val(res.data.nickname);
+                    // $('input.userPic').val(res.data.userPic);
+                    // $('input.email').val(res.data.email);
+                    // $('input.password').val(res.data.password);
+
+                    var data = res.data;
+                    $('.user_pic').attr('src', data.userPic);
+                    for (var key in data) {
+                        $('input.' + key).val(data[key]);
+
+                    }
+
+                }
+            })
+            $('#exampleInputFile').on('change', function () {
+                var imgIcon = this.files[0];
+                var url = URL.createObjectURL(imgIcon);
+                $('.user_pic').attr('src', url);
+            })
+
+
+            $('.btn-edit').on('click', function (e) {
+                e.preventDefault();
+                var form = $('#form')[0];
+                var userData = new FormData(form);
+                $.post({
+                    url: BigNew.user_edit,
+                    data: userData,
+                    contentType: false,
+                    processData: false,
+                    success: function () {
+                        //刷新子页面
+                        // parent.window.location.reload();
+                        // location.href = "./user.html";
+                        $.get({
+                            url: BigNew.user_detail,
+                            success: function (res) {
+                                console.log(res);
+                                parent.$('.user_info>span').html(res.data.nickname);
+                                parent.$('.user_info>img').attr('src', res.data.userPic);
+                                parent.$('.user_center_link>img').attr('src', res.data.userPic);
+                            }
+                        })
+                    }
+
+                })
+
+            })
+
+        })
+
+    </script>
 </body>
 
 </html>
