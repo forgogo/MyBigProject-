@@ -10,9 +10,14 @@
     <link rel="stylesheet" href="./css/reset.css">
     <link rel="stylesheet" href="./css/iconfont.css">
     <link rel="stylesheet" href="./css/main.css">
+    <!-- 分页插件样式 -->
+    <link rel="stylesheet" href="./css/jquery.pagination.css">
     <script src="./libs/jquery-1.12.4.min.js"></script>
     <!-- 引入模板引擎js文件 -->
     <script src="./libs/template-web.js"></script>
+    <script src="./js/apilink.js"></script>
+    <!-- 分页插件JS -->
+    <script src="./js/jquery.pagination.min.js"></script>
 </head>
 
 <body>
@@ -25,11 +30,8 @@
                 <div class="col-xs-6">
                     <form class="form-inline">
                         <select id="selCategory" name="" class="form-control input-sm">
-                            <option value="">所有分类</option>
-                            <option>未分类</option>
-                            <option>奇趣事</option>
-                            <option>会生活</option>
-                            <option>爱旅行</option>
+
+
                         </select>
                         <select id="selStatus" name="" class="form-control input-sm">
                             <option value="">所有状态</option>
@@ -55,7 +57,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
+                    <!-- <tr>
                         <td>王积千造统最头</td>
                         <td>杰克</td>
                         <td>奇趣事</td>
@@ -65,13 +67,178 @@
                             <a href="article_edit.html" class="btn btn-default btn-xs">编辑</a>
                             <a href="javascript:void(0);" class="btn btn-danger btn-xs delete">删除</a>
                         </td>
-                    </tr>
+                    </tr> -->
                 </tbody>
             </table>
             <div class="row text-center">
+                <div id="pagination3" class="page">
+                    <div class="ui-pagination-container"></div>
+                </div>
             </div>
         </div>
     </div>
+    <!-- 筛选模板引擎 -->
+    <script type="text/html" id="selectName">
+        <option value="">所有分类</option>
+                 {{each data v}}
+                    <option data-id="{{v.id}}">{{v.name}}</option>
+                      {{/each}}
+    </script>
+    <!-- 模板引擎 -->
+    <script type="text/html" id="list">
+    {{each data.data v}}
+    <tr>
+            <td>{{v.title}}</td>
+            <td>{{v.author}}</td>
+            <td>{{v.category}}</td>
+            <td class="text-center">{{v.date}}</td>
+            <td class="text-center">{{v.state}}</td>
+            <td class="text-center">
+                <a href="article_edit.html" class="btn btn-default btn-xs btn-edit" data-id="{{v.id}}">编辑</a>
+                <a href="javascript:void(0);" class="btn btn-danger btn-xs delei" data-id="{{v.id}}">删除</a>
+            </td>
+        </tr>
+    {{/each}}
+    </script>
+
+    <script>
+        $(function () {
+
+            // 请求数据
+            var getData = function () {
+                $.get({
+                    url: BigNew.article_query,
+                    data: {
+                        perpage: 10,
+
+                    },
+                    success: function (res) {
+                        // console.log(res);
+                        // 渲染到页面
+                        let htmlStr = template("list", res);
+                        $("tbody").html(htmlStr);
+                        let totalCount = res.data.totalCount;//总条数
+                        let totalPage = res.data.totalPage;//当前页
+
+                        pagination(totalPage, totalCount);
+                    }
+                })
+            }
+            getData();
+
+            //插件的方法
+            var mypage = 1;
+            var pagination = function (totalPage, totalCount, type, state) {
+                $("#pagination3").pagination({
+                    currentPage: mypage,//默认显示第一页
+                    totalPage: totalPage,//当前页
+                    isShow: true,
+                    count: 7,
+                    totalList: totalCount,
+                    homePageText: "首页",
+                    endPageText: "尾页",
+                    prevPageText: "上一页",
+                    nextPageText: "下一页",
+                    //回调函数
+                    callback: function (current) {
+                        $.get({
+                            url: BigNew.article_query,
+                            data: {
+                                type: type,
+                                state: state,
+                                perpage: 10,
+                                page: current
+                            },
+                            success: function (res) {
+                                let htmlStr = template("list", res);
+                                $("tbody").html(htmlStr);
+                            }
+                        })
+                        mypage = current;
+
+
+                    }
+                });
+            }
+
+            //左上角分类名渲染
+            $.get({
+                url: BigNew.category_list,
+                success: function (res) {
+                    // console.log(res);
+
+                    let htmlStr = template("selectName", res);
+                    $("#selCategory").html(htmlStr);
+                }
+            })
+            //筛选功能实现
+            $('#btnSearch').on('click', function (e) {
+                e.preventDefault();
+
+                let type = $("#selCategory").find("option:selected").attr('data-id');//分类
+                let state = $("#selStatus").find("option:selected").text();//状态
+                //判断是否全选 如果是返回为空
+                if (type == "所有分类") {
+                    type = undefined
+                }; if (state == "所有状态") {
+                    state = undefined
+                }
+                // /请求
+                $.get({
+                    url: BigNew.article_query,
+                    data: {
+                        type: type,//分类名
+                        state: state,
+                        perpage: 10
+                    },
+                    success: function (res) {
+                        let htmlStr = template("list", res);
+                        // console.log(res);
+
+                        $("tbody").html(htmlStr);
+                        let totalCount = res.data.totalCount;//总条数
+                        let totalPage = res.data.totalPage;//当前页
+
+                        pagination(totalPage, totalCount, type, state);
+                    }
+                })
+            })
+            //删除文章功能实现
+
+            $('tbody').on('click', '.delei', function () {
+                let id = parseInt($(this).attr('data-id'));
+                console.log(mypage);
+                if (confirm("你真的要删除吗?")) {
+                    $.post({
+                        url: BigNew.article_delete,
+                        data: { id: id },
+                        success: function (res) {
+
+                            getData();
+
+                        }
+                    })
+                }
+            })
+
+            //编辑文章功能实现
+            $('tbody').on('click', '.btn-edit', function () {
+                let id = $(this).attr('data-id');
+                console.log(id);
+
+                $.get({
+                    url: BigNew.article_search,
+                    data: { id: id },
+                    success: function (res) {
+                        let htmlStr = template("list", res);
+                        $("tbody").html(htmlStr);
+                    }
+                })
+
+            })
+
+        })
+    </script>
 </body>
 
 </html>
